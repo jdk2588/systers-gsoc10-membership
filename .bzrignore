@@ -1,0 +1,10 @@
+lists
+archives
+locks
+logs
+qfiles
+spam
+data
+data/*
+convert.essays
+Mailman/mm_cfg.py

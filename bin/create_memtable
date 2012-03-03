@@ -1,0 +1,57 @@
+#! /usr/bin/python
+#
+# Copyright (C) 2002 by the Free Software Foundation, Inc.
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software 
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+"""This script creates the table for the storage of data and its table 
+Usage : bin/create_memtable
+"""
+import sys
+import getopt
+import psycopg2
+import paths
+import os
+from Mailman.i18n import _
+
+
+program = sys.argv[0]
+
+
+def usage(code, msg=''):
+    if code:
+        fd = sys.stderr
+    else:
+        fd = sys.stdout
+    print >> fd, _(__doc__)
+    if msg:
+        print >> fd, msg
+    sys.exit(code)
+
+def main():
+    print os.system('psql -d mailman_members -f /usr/share/postgresql/8.3/contrib/chkpass.sql -U mailman ')
+    try:
+               conn = psycopg2.connect("dbname='mailman_members' user='mailman' host='localhost' password='mailman'")
+    	       print "yay!connected"
+    except:
+               print "I am unable to connect to the database"
+
+    conn.cursor()
+    conn.cursor().execute ("""CREATE TABLE mailman_test (listname varchar(100) NOT NULL, address varchar(255) NOT NULL,password chkpass NOT NULL default '!', lang varchar(255) NOT NULL default 'en',name varchar(255) default NULL, delivery_status int NOT NULL default 0, user_options bigint NOT NULL default 0, digest char NOT NULL default 'N', topics_userinterest varchar(255) default NULL, bounce_info varchar(255) default NULL, delivery_status_timestamp timestamp default NULL,openid boolean NOT NULL default '0',  PRIMARY KEY  (listname, address));
+""")
+    conn.commit()
+
+if __name__ == '__main__':
+       main()

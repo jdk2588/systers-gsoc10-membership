@@ -1,0 +1,169 @@
+#! /usr/bin/python
+
+""" Migrate old lists, adding the potentially missing attributes mlist.questions, mlist.essay_enabled, mlist.dlists_enabled and mlist.fullname_required
+
+Usage: %(program)s [options] list1 [list2...]
+
+Options:
+
+    -d / --dry-run
+        Dry run, only printing which changes would be applied.
+
+    -h / --help
+        Print this text and exit.
+
+    -v / --verbose
+        Explain what is being done.
+
+    Specify one or more listnames on which to use the script. If 'all' is given instead of a listname, the script will be run on all lists.
+"""
+
+import sys
+import getopt
+import paths
+import os, os.path, string
+
+from Mailman import mm_cfg
+from Mailman import MailList
+from Mailman import Utils
+from Mailman import Errors
+from Mailman import DlistUtils
+from Mailman.i18n import _
+
+mailman_path = os.path.dirname(os.path.realpath(__file__))
+mailman_path = string.join(mailman_path.split("/")[:-1],"/")
+
+program = sys.argv[0]
+
+def usage(code, msg=''):
+    if code:
+        fd = sys.stderr
+    else:
+        fd = sys.stdout
+    print >> fd, _(__doc__)
+    if msg:
+        print >> fd, msg
+    sys.exit(code)
+
+
+def main():
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'dhv',
+                                   ['dry-run', 'help', 'verbose'])
+    except getopt.error, msg:
+        usage(1, msg)
+    dry_run = False
+    verbose = False
+    for opt, arg in opts:
+        if opt in ('-h', '--help'):
+            print "called"
+            usage(0)
+        if opt in ('-d', '--dry-run'):
+            dry_run = True
+        if opt in ('-v', '--verbose'):
+            verbose = True
+    if not args:
+        print 'Missing arguments, please supply the listname(s) for which list(s) to migrate.'
+        print "Try `%s --help' for more information." % os.path.basename(program)
+        sys.exit(1)
+
+    all_names = Utils.list_names()
+    names = []
+    if 'all' in args:
+        names = all_names
+    else:
+        for arg in args:
+            if arg in all_names:
+                names.append(arg)
+            else:
+                print '%s is not a known listname' % arg
+
+    mlists = []
+    for n in names:
+        mlist = MailList.MailList(n, lock=0)
+        mlists.append(mlist)
+
+    for mlist in mlists:
+        migrate_list(mlist, dry_run, verbose)
+
+def migrate_list(mlist, dry_run, verbose):
+    """Migrate a single old list by adding missing attributes."""
+    set_dlists(mlist, verbose)
+    set_essay(mlist, verbose)
+    set_fullname(mlist, verbose)
+    if not dry_run:
+        mlist.Lock()
+        mlist.Save()
+        mlist.Unlock()
+
+
+def set_dlists(mlist, verbose):
+    """ Find out if the attribute mlist.dlists_enabled is set, if not - set it. """
+    try:
+        if mlist.dlists_enabled:
+            pass
+    except:
+        if verbose:
+            print 'setting %s.dlists_enabled = %d' % (mlist.internal_name(), DlistUtils.enabled(mlist))
+        mlist.dlists_enabled = DlistUtils.enabled(mlist)
+
+def set_essay(mlist, verbose):
+    """ Find out if an essay should be used for the list and if so what the questions should be. Tries to find out by looking for the templates listinfo-dyn.html or listinfo.html, should these have been modified. If they have not been modifed, the standard Systers questions are set. """
+    try:
+        if mlist.questions:
+            pass
+    except:
+        content = ""
+        filename_dyn = mailman_path + ("/lists/%s/en/listinfo-dyn.html" % mlist.internal_name())
+        filename = mailman_path + ("/lists/%s/en/listinfo.html" % mlist.internal_name())
+        if os.path.exists(filename_dyn):
+            content = read(filename_dyn)
+            content = content.split('<mm-essay-box>')
+            if len(content) == 1:
+                print 'There seem to be no questions in this list, even though the listinfo-dyn.html template has been modified. The questions and essay_enabled will be set to empty respectively false.'
+                questions = ""
+                enabled = False
+            elif len(content) == 2:
+                first_half = content[0]
+                questions = first_half.split('<TD COLSPAN="3">')[-1]
+                enabled = True
+            else:
+                print 'This script can not be used on the template file listinfo-dyn.html for the mailling list %s, since it contains more than one <mm-essay-box> (which is replaced with the essay field when viewing the page). The questions will be set to empty and essay_enabled to true.' % mlist.internal_name()
+                questions = ''
+                enabled = True
+        elif os.path.exists(filename):
+            questions = ""
+            enabled = False
+        else:
+            questions = """<p>This list requires subscribers to provide a short essay on their qualifications to join this list. To join the list, you must tell us:1) your involvement in technical computing -- one or two sentences is enough, 2) that you are a woman, and 3) that you HAVE READ and AGREE to follow the rules in the <a href="http://www.systers.org/faq.html" title="frequently asked questions">frequently asked questions</a> Thank you!</p>"""
+            enabled = True
+
+        if verbose:
+            print 'setting %s.questions = %s' % (mlist.internal_name(), questions)
+            print 'setting %s.essay_enabled = %d' % (mlist.internal_name(), enabled)
+        mlist.questions = questions
+        mlist.essay_enabled = enabled
+
+def read(filename):
+    """ Open and read a file. """
+    try:
+        infile = open(filename ,'r')
+        content = infile.read()
+        infile.close()
+        return content
+    except:
+        return False
+
+def set_fullname(mlist, verbose):
+    """ Set if fullname should be required to subscribe to the list. Default is False. """
+    try:
+        if mlist.fullname_required:
+            pass
+    except:
+        if verbose:
+            print 'setting %s.fullname_required = False' % mlist.internal_name()
+        mlist.fullname_required = False
+ 
+
+if __name__ == '__main__':
+    main()

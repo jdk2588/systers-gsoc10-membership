@@ -1,0 +1,53 @@
+Welcome to the %(real_name)s@%(host_name)s mailing list!  Please send any questions or comments to %(real_name)s-owner@%(host_name)s.
+
+Instead of having each message go to every user, as with conventional mailing lists, each message is part of a conversation, and users can opt out of conversations that do not interest them.
+  
+To begin a new conversation, send your message to:
+
+  %(real_name)s+new@%(host_name)s
+
+Alternately, if you would like to specify a name for your new conversation, send your message to:
+
+  %(real_name)s+new+name@%(host_name)s
+
+replacing "name" with the name you would like (e.g., %(real_name)s+new+greetings@%(host_name)s).
+
+To continue an existing conversation, simply use your mailer's "reply-all" command.
+
+By default, you will get all messages.  You can, however:
+
+- Opt out of any conversation by following the directions in the message.
+
+- Change your preferences so you only see the first message in each conversation.  If you wish to see further messages in a specific conversation, you can easily opt in by following the directions in the message that interests you.
+
+For full information about %(real_name)s, see:
+
+  %(listinfo_url)s
+
+If you ever want to unsubscribe or change your options (e.g., switch to or
+from digest mode, change your password, etc.), visit your subscription
+page at:
+
+  %(optionsurl)s
+
+We encourage you to visit the page now to set your preference for receiving messages
+in plain text or html format.  (We recommend html if your mailer supports it to get
+the full benefits of the software.)
+
+You can also make such adjustments via email by sending a message to:
+
+  %(real_name)s-request@%(host_name)s
+
+with the word `help' in the subject or body (don't include the
+quotes), and you will get back a message with instructions.
+
+You must know your password to change your options (including changing
+the password, itself) or to unsubscribe.  It is:
+
+  %(password)s
+
+Normally, Mailman will remind you of your %(host_name)s mailing list
+passwords once every month, although you can disable this if you
+prefer.  This reminder will also include instructions on how to
+unsubscribe or change your account options.  There is also a button on
+your options page that will email your current password to you.
